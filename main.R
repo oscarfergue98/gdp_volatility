@@ -1,9 +1,15 @@
-rm(list=ls())
-gdp_data <- read.csv("~/Downloads/namq_10_gdp_page_linear.csv")
 
-`%>%` <- dplyr::`%>%`
+# Housekeeping
+if (T) {
+  `%>%` <- dplyr::`%>%`
+  aes <- ggplot2::aes
+}
 
-clean_data <- gdp_data %>% 
+# Import raw data
+raw_gdp_data <- read.csv("~/Downloads/namq_10_gdp_page_linear.csv")
+
+# Modify raw data accordingly
+gdp_data <- raw_gdp_data %>% 
   dplyr::select(geo, TIME_PERIOD, OBS_VALUE) %>% 
   dplyr::filter(
     geo %in% c("AT", "BE", "HR", "CY", "EE", "FI", "FR", "DE", "EL", "IE", 
@@ -17,12 +23,11 @@ clean_data <- gdp_data %>%
     gdp_cycle = mFilter::hpfilter(100*log(OBS_VALUE), freq = 1600)$cycle) %>% 
   dplyr::ungroup() %>% 
   dplyr::mutate(
-    date = zoo::as.yearqtr(TIME_PERIOD, format = "%Y-Q%q")
+    date = zoo::as.Date(zoo::as.yearqtr(TIME_PERIOD, format = "%Y-Q%q"))
   ) %>% 
   dplyr::select(geo, date, gdp_cycle) %>% 
   dplyr::filter(lubridate::year(date)>=2000) %>% 
-  tidyr::pivot_wider(names_from = geo, values_from = gdp_cycle
-  ) %>% 
+  tidyr::pivot_wider(names_from = geo, values_from = gdp_cycle) %>% 
   dplyr::arrange(date) %>% 
   dplyr::mutate(
     GR = dplyr::if_else(lubridate::year(date)<2001, NA, GR),
@@ -39,10 +44,32 @@ clean_data <- gdp_data %>%
   dplyr::mutate(
     vol_gdp = log(sd(dplyr::c_across(-matches("date")), na.rm = T))
     ) %>%
-  dplyr::ungroup() %>% 
-  dplyr::mutate(
-    lag_st = vol_gdp - dplyr::lag(vol_gdp)
-  )
+  dplyr::ungroup() 
+
+# Create a plot depicting GDP volatility
+gdp_data %>% 
+  ggplot2::ggplot(aes(x = date, y = vol_gdp)) + 
+  ggplot2::geom_line(col = "darkblue") + 
+  ggplot2::theme_light() + 
+  ggplot2::labs(x = "", y = "EMU GDP Volatility (in logs)") + 
+  ggplot2::geom_vline(xintercept = zoo::as.Date("2008-01-01"), linetype = "dashed") + 
+  ggplot2::geom_vline(xintercept = zoo::as.Date("2012-01-01"), linetype = "dashed") + 
+  ggplot2::geom_vline(xintercept = zoo::as.Date("2020-01-01"), linetype = "dashed")
+
+# Forecasting exercise 
+
+gdp_data <- data.frame(date = seq(as.Date("2000-01-01"), 
+                                  by="quarter", 
+                                  length.out = nrow(gdp_data) + 4)) %>% 
+  dplyr::left_join(gdp_data %>% dplyr::select(date, vol_gdp), by = "date") %>% 
+  dplyr::mutate(lag_vol_gdp = dplyr::lag(vol_gdp))
+
+last_obs_row <- which(gdp_data$date == "2024-01-01")
 
 
-
+for (jj in last_obs_row:(last_obs_row + 4)) {
+  
+  current.model = lm(vol_gdp ~ lag_vol_gdp, gdp_data)
+  gdp_data$vol_gdp[jj] = predict(current.model, gdp_data)
+  
+}
