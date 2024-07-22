@@ -1,5 +1,12 @@
 
 # Housekeeping
+
+# List of packages you want to check/install
+required_packages <- c("dplyr", "ggplot2", "mFilter", "zoo", "lubridate", "tidyr")
+
+# Run the function with the list of required packages
+install_if_missing(required_packages)
+
 if (T) {
   `%>%` <- dplyr::`%>%`
   aes <- ggplot2::aes
@@ -8,13 +15,19 @@ if (T) {
 # Import raw data
 raw_gdp_data <- read.csv("~/Downloads/namq_10_gdp_page_linear.csv")
 
+# Create vector of EMU countries 
+
+emu_countries <- c("AT", "BE", "HR", "CY", "EE", "FI", "FR", "DE", "EL", "IE", 
+                   "IT", "LV", "LT", "LU", "MT", "NL", "PT", "SK", "SI", "ES")
+
 # Modify raw data accordingly
 gdp_data <- raw_gdp_data %>% 
-  dplyr::select(geo, TIME_PERIOD, OBS_VALUE) %>% 
+  dplyr::select(
+    geo, TIME_PERIOD, OBS_VALUE
+    ) %>% 
   dplyr::filter(
-    geo %in% c("AT", "BE", "HR", "CY", "EE", "FI", "FR", "DE", "EL", "IE", 
-               "IT", "LV", "LT", "LU", "MT", "NL", "PT", "SK", "SI", "ES")
-  ) %>% 
+    geo %in% emu_countries
+    ) %>% 
   dplyr::mutate(
     geo = dplyr::if_else(geo=="EL", "GR", geo)
   ) %>% 
