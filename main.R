@@ -53,7 +53,7 @@ gdp_data <- eurostat::get_eurostat("namq_10_gdp", time_format = "num", stringsAs
 
 gdp_data %>% 
   dplyr::filter(lubridate::year(date)>=2005) %>% 
-  ggplot2::ggplot(aes(x = date, y = vol_gdp)) + 
+  ggplot2::ggplot(aes(x = date, y = log_vol_gdp)) + 
   ggplot2::geom_line(col = "darkred") + 
   ggplot2::theme_light() + 
   ggplot2::labs(x = "", y = "EMU GDP Volatility") + 
@@ -100,7 +100,7 @@ for (mm in 1:4) {
   new_lag_name <- paste0("l", mm, "_vol_gdp")
   gdp_data <- gdp_data %>% 
     dplyr::mutate(
-    !!rlang::sym(new_lag_name) := dplyr::lag(vol_gdp, n = mm)
+    !!rlang::sym(new_lag_name) := dplyr::lag(log_vol_gdp, n = mm)
     )
 }
 
