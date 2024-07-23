@@ -1,5 +1,6 @@
 # List of required packages in the session
-required_packages <- c("dplyr", "ggplot2", "mFilter", "zoo", "lubridate", "tidyr")
+required_packages <- c("dplyr", "ggplot2", "mFilter", "zoo", 
+                       "lubridate", "tidyr", "eurostat")
 
 # Create raw data path
 raw_data_path <- "data"

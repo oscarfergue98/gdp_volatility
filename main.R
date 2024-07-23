@@ -13,31 +13,26 @@ if (T) {
 }
 
 # Import raw data
-raw_gdp_data <- read.csv(file.path(raw_data_path, "namq_10_gdp_page_linear.csv"))
-
-# Modify raw data accordingly
-gdp_data <- raw_gdp_data %>% 
-  dplyr::select(
-    geo, TIME_PERIOD, OBS_VALUE
-    ) %>% 
+gdp_data <- eurostat::get_eurostat("namq_10_gdp", time_format = "num", stringsAsFactors = TRUE) %>% 
   dplyr::filter(
-    geo %in% emu_countries    ) %>% 
-  dplyr::mutate(
-    geo = dplyr::if_else(geo=="EL", "GR", geo)
+    s_adj == "SCA", 
+    unit == "CLV10_MEUR", 
+    na_item == "B1GQ", 
+    geo %in% emu_countries
   ) %>% 
   dplyr::mutate(
-    date = zoo::as.Date(zoo::as.yearqtr(TIME_PERIOD, format = "%Y-Q%q"))
+    date = zoo::as.Date(zoo::as.yearqtr(TIME_PERIOD))
   ) %>% 
-  #dplyr::filter(date<=as.Date("2019-04-01"), date>=as.Date("1990-01-01")) %>% 
+  dplyr::select(geo, date, values) %>% 
   dplyr::group_by(geo) %>% 
   dplyr::mutate(
-    gdp_cycle = mFilter::hpfilter(100 * log(OBS_VALUE), freq = 1600, type = "lambda")$cycle) %>% 
+    gdp_cycle = mFilter::hpfilter(100 * log(values), freq = 1600, type = "lambda")$cycle) %>% 
   dplyr::ungroup() %>% 
   dplyr::select(date, geo, gdp_cycle) %>% 
   tidyr::pivot_wider(names_from = geo, values_from = gdp_cycle) %>% 
   dplyr::arrange(date) %>% 
   dplyr::mutate(
-    GR = dplyr::if_else(lubridate::year(date)<2001, NA, GR),
+    EL = dplyr::if_else(lubridate::year(date)<2001, NA, EL),
     SI = dplyr::if_else(lubridate::year(date)<2007, NA, SI),
     CY = dplyr::if_else(lubridate::year(date)<2008, NA, CY),
     MT = dplyr::if_else(lubridate::year(date)<2008, NA, MT),
@@ -108,21 +103,25 @@ for (jj in first_row_fcast:(first_row_fcast + fcast_horizon - 1)) {
   
 }
 
+gdp_data <- gdp_data %>% 
+  dplyr::mutate(
+    vol_gdp_upr_95 = dplyr::if_else(date == date_last_obs, vol_gdp, vol_gdp_upr_95),
+    vol_gdp_lwr_95 = dplyr::if_else(date == date_last_obs, vol_gdp, vol_gdp_lwr_95),
+    vol_gdp_lwr_68 = dplyr::if_else(date == date_last_obs, vol_gdp, vol_gdp_lwr_68),
+    vol_gdp_upr_68 = dplyr::if_else(date == date_last_obs, vol_gdp, vol_gdp_upr_68)
+  ) %>% 
+  dplyr::filter(lubridate::year(date)>=2021)
 
 # Create a plot depicting the forecast
 
-gdp_data %>% 
-  dplyr::filter(lubridate::year(date)>=2022) %>% 
-  dplyr::mutate(
-    date_str = dplyr::if_else(date>=date_first_fcast, "Forecast", "Historical")
-  ) %>% 
-  ggplot2::ggplot(aes(x = date)) + 
-  ggplot2::geom_ribbon(aes(x=date, ymax=vol_gdp_upr_95, ymin=vol_gdp_lwr_95), fill="grey", alpha=.3) +
-  ggplot2::geom_ribbon(aes(x=date, ymax=vol_gdp_upr_68, ymin=vol_gdp_lwr_68), fill="grey", alpha=.8) +
-  ggplot2::geom_line(aes(y = vol_gdp), col = "darkblue") + 
-  ggplot2::theme_light() + 
-  ggplot2::labs(x = "", y = "EMU GDP Volatility (in logs)") + 
-  ggplot2::geom_vline(xintercept = zoo::as.Date("2008-01-01"), linetype = "dashed") + 
-  ggplot2::geom_vline(xintercept = zoo::as.Date("2012-01-01"), linetype = "dashed") + 
-  ggplot2::geom_vline(xintercept = zoo::as.Date("2020-01-01"), linetype = "dashed") +
-  ggplot2::geom_vline(xintercept = as.Date("2024-04-01"), linetype = "dashed")
+ggplot2::ggplot() +
+  ggplot2::geom_ribbon(data = gdp_data, aes(x=date, ymax=vol_gdp_upr_95, ymin=vol_gdp_lwr_95), fill="grey", alpha=.3) +
+  ggplot2::geom_ribbon(data = gdp_data, aes(x=date, ymax=vol_gdp_upr_68, ymin=vol_gdp_lwr_68), fill="grey", alpha=.8) +
+  ggplot2::geom_line(data = gdp_data %>% dplyr::filter(date <= date_last_obs), 
+            aes(x = date, y = vol_gdp), 
+            color = "darkred", linetype = "solid") +
+  ggplot2::geom_line(data = gdp_data %>% dplyr::filter(date >= date_last_obs), 
+            aes(x = date, y = vol_gdp), 
+            color = "darkred", linetype = "dashed") +
+  ggplot2::theme_light() 
+
