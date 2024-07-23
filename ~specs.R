@@ -6,9 +6,15 @@ required_packages <- c("dplyr", "ggplot2", "mFilter", "zoo",
 raw_data_path <- "data"
 
 # Create vector of EMU countries 
-emu_countries <- c("AT", "BE", "HR", "CY", "EE", "FI", "FR", "DE", "EL", "IE", 
-                   "IT", "LV", "LT", "LU", "MT", "NL", "PT", "SK", "SI", "ES")
+emu_countries <- c("AT", "BE", "CY", "DE", "EE", "ES", "FI", 
+                   "FR", "GR", "HR", "IE", "IT", "LT", "LU", 
+                   "LV", "MT", "NL", "PT", "SI", "SK")
 
 # Forecast horizon 
 
 fcast_horizon <- 4
+
+# Select variables for the models 
+
+mod_y <- "vol_gdp"
+mod_X <- c("l1_vol_gdp", "l2_vol_gdp", "l3_vol_gdp", "l4_vol_gdp")
