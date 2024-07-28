@@ -5,6 +5,10 @@ required_packages <- c("dplyr", "ggplot2", "mFilter", "zoo",
 # Create raw data path
 raw_data_path <- "data"
 
+# Create graphics path 
+
+graphs_path <- "plots"
+
 # Create vector of EMU countries 
 emu_countries <- c("AT", "BE", "CY", "DE", "EE", "ES", "FI", 
                    "FR", "GR", "HR", "IE", "IT", "LT", "LU", 

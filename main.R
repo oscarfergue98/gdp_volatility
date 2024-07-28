@@ -51,7 +51,7 @@ gdp_data <- eurostat::get_eurostat("namq_10_gdp", time_format = "num", stringsAs
 
 # Create a plot depicting GDP volatility
 
-gdp_data %>% 
+g1 <- gdp_data %>% 
   dplyr::filter(lubridate::year(date)>=2005) %>% 
   ggplot2::ggplot(aes(x = date, y = vol_gdp)) + 
   ggplot2::geom_line(col = "darkred") + 
@@ -142,7 +142,7 @@ gdp_data <- gdp_data %>%
 
 # Create a plot depicting the forecast
 
-ggplot2::ggplot() +
+g2 <- ggplot2::ggplot() +
   ggplot2::geom_ribbon(data = gdp_data, aes(x=date, ymax=vol_gdp_upr_95, ymin=vol_gdp_lwr_95), fill="grey", alpha=.4) +
   ggplot2::geom_ribbon(data = gdp_data, aes(x=date, ymax=vol_gdp_upr_68, ymin=vol_gdp_lwr_68), fill="grey", alpha=.8) +
   ggplot2::geom_line(data = gdp_data %>% dplyr::filter(date <= date_last_obs), 
@@ -156,3 +156,14 @@ ggplot2::ggplot() +
   ggplot2::labs(x = "", y = "") + 
   ggplot2::labs(x = "", y = "EMU GDP Volatility")
 
+# Export the two graphs 
+
+# GDP volatility historical
+png(file.path(graphs_path, "gdp_vol.png"))
+print(g1)
+dev.off()
+
+# GDP volatility forecast
+png(file.path(graphs_path, "gdp_vol_fcast.png"))
+print(g2)
+dev.off()
