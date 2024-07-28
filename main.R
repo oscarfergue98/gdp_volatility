@@ -53,7 +53,7 @@ gdp_data <- eurostat::get_eurostat("namq_10_gdp", time_format = "num", stringsAs
 
 gdp_data %>% 
   dplyr::filter(lubridate::year(date)>=2005) %>% 
-  ggplot2::ggplot(aes(x = date, y = log_vol_gdp)) + 
+  ggplot2::ggplot(aes(x = date, y = vol_gdp)) + 
   ggplot2::geom_line(col = "darkred") + 
   ggplot2::theme_light() + 
   ggplot2::labs(x = "", y = "EMU GDP Volatility") + 
@@ -64,19 +64,19 @@ gdp_data %>%
   ggplot2::geom_vline(xintercept = zoo::as.Date("2014-07-01"), linetype = "dashed") +
   ggplot2::geom_text(aes(x=zoo::as.Date("2008-01-01"), 
                          label="\nGreat Financial Crisis", y=3), 
-                     colour="black", angle=90, size = 3.5) +
+                     colour="black", angle=90) +
   ggplot2::geom_text(aes(x=zoo::as.Date("2012-01-01"), 
                          label="\nDebt crisis", y=3), 
-                     colour="black", angle=90, size = 3.5) +
+                     colour="black", angle=90) +
   ggplot2::geom_text(aes(x=zoo::as.Date("2020-01-01"), 
                          label="Covid-19 Crisis\n", y=3), 
-                     colour="black", angle=90, size = 3.5) +
+                     colour="black", angle=90) +
   ggplot2::geom_text(aes(x=zoo::as.Date("2022-01-01"), 
                          label="Ukraine War\n", y=3.2), 
-                     colour="black", angle=90, size = 3.5) +
+                     colour="black", angle=90) +
   ggplot2::geom_text(aes(x=zoo::as.Date("2014-07-01"), 
                          label="APP\n", y=3.2), 
-                     colour="black", angle=90, size = 3.5)
+                     colour="black", angle=90)
 
 # Forecasting exercise 
 
@@ -100,7 +100,7 @@ for (mm in 1:4) {
   new_lag_name <- paste0("l", mm, "_vol_gdp")
   gdp_data <- gdp_data %>% 
     dplyr::mutate(
-    !!rlang::sym(new_lag_name) := dplyr::lag(log_vol_gdp, n = mm)
+    !!rlang::sym(new_lag_name) := dplyr::lag(vol_gdp, n = mm)
     )
 }
 
